@@ -2,13 +2,66 @@ import React, { useEffect, useState } from 'react';
 import { Button, Rating, Spinner } from 'flowbite-react';
 
 const App = props => {
+
   const [movies, setMovies] = useState([]);
+  const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchMovies = () => {
+  const fetchMovies = async () => {
     setLoading(true);
 
-    return fetch('http://localhost:8000/movies')
+    return fetch(`http://localhost:8000/movies`)
+      .then(response => response.json())
+      .then(data => {
+        setMovies(data);
+        setLoading(false);
+      });
+  }
+
+  //fetch genres to print with a select input
+  const fetchGenres = async () => {
+    setLoading(true);
+
+    return fetch(`http://localhost:8000/genres`)
+      .then(response => response.json())
+      .then(data => {
+        setGenres(data);
+        setLoading(false);
+      });
+  }
+
+  //fetch all movies with the selected genre
+  //genre: number
+  const fetchByGenre = async (genre) => {
+    setLoading(true)
+
+    return fetch(`http://localhost:8000/movies${genre}`)
+      .then(response => response.json())
+      .then(data => {
+        setMovies(data);
+        setLoading(false);
+      });
+  }
+
+  //fetch all movies ordering by date asc or desc
+  //date: string (api accepts only "ASC" or "DESC")
+  const fetchByDate = async (date) => {
+    setLoading(true)
+    
+    return fetch(`http://localhost:8000/movies?recent=${date}`)
+    .then(response => response.json())
+    .then(data => {
+      setMovies(data);
+      setLoading(false);
+    });
+  }
+  
+  //fecth all movies ordering by rate
+  //date: string (api accepts only "ASC" or "DESC")
+  const fetchByRating = async (rating) => {
+    setLoading(true)
+
+    return fetch(`http://localhost:8000/movies?rating=${rating}`)
       .then(response => response.json())
       .then(data => {
         setMovies(data);
@@ -18,11 +71,37 @@ const App = props => {
 
   useEffect(() => {
     fetchMovies();
+    fetchGenres();
   }, []);
 
   return (
     <Layout>
       <Heading />
+
+      {/* filtri  */}
+
+      <div className='flex justify-center gap-x-2'>
+
+        <select onChange={() => (fetchByGenre(event.target.value))} className='rounded mb-2 w-[200px]' name="" id="">
+          <option value="">Scegli il genere</option>
+          {genres.map((genre, key) => (
+            <option key={key} value={"/genre/" + genre.id}>{genre.name}</option>
+          ))}
+        </select>
+
+        <select onChange={() => (fetchByDate(event.target.value))} className='rounded mb-2 w-[150px]' name="" id="">
+          <option value=""></option>
+          <option value="DESC">Piu recenti</option>
+          <option value="ASC">Meno recenti</option>
+        </select>
+
+        <select onChange={() => (fetchByRating(event.target.value))} className='rounded mb-2 w-[150px]' name="" id="">
+          <option value=""></option>
+          <option value="DESC">Piu voti</option>
+          <option value="ASC">Meno meno</option>
+        </select>
+
+      </div>
 
       <MovieList loading={loading}>
         {movies.map((item, key) => (
@@ -89,19 +168,19 @@ const MovieItem = props => {
         <div className="grow mb-3 last:mb-0">
           {props.year || props.rating
             ? <div className="flex justify-between align-middle text-gray-900 text-xs font-medium mb-2">
-                <span>{props.year}</span>
+              <span>{props.year}</span>
 
-                {props.rating
-                  ? <Rating>
-                      <Rating.Star />
+              {props.rating
+                ? <Rating>
+                  <Rating.Star />
 
-                      <span className="ml-0.5">
-                        {props.rating}
-                      </span>
-                    </Rating>
-                  : null
-                }
-              </div>
+                  <span className="ml-0.5">
+                    {props.rating}
+                  </span>
+                </Rating>
+                : null
+              }
+            </div>
             : null
           }
 
@@ -116,13 +195,13 @@ const MovieItem = props => {
 
         {props.wikipediaUrl
           ? <Button
-              color="light"
-              size="xs"
-              className="w-full"
-              onClick={() => window.open(props.wikipediaUrl, '_blank')}
-            >
-              More
-            </Button>
+            color="light"
+            size="xs"
+            className="w-full"
+            onClick={() => window.open(props.wikipediaUrl, '_blank')}
+          >
+            More
+          </Button>
           : null
         }
       </div>
